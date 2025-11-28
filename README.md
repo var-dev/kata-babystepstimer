@@ -1,0 +1,1 @@
+All credit to https://github.com/dtanzer/babystepsstimer

@@ -1,0 +1,7 @@
+{
+  "watch": ["src","./index.html"],
+  "ext": "ts",
+  "ignore": ["**/*.spec.ts","**/*.test.ts"],
+  "exec": "npm test"
+}
+

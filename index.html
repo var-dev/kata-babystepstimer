@@ -1,0 +1,17 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baby Steps Timer</title>
+</head>
+
+<body>
+  <script type="module">
+    import { command, CreateTimerHtml, getRemainingTimeCaption } from "./src/babysteps.js";
+    window.document.body.innerHTML = CreateTimerHtml(getRemainingTimeCaption(0), "#ffffff", false);
+    window.command = command;
+  </script>
+</body>
+
+</html>
