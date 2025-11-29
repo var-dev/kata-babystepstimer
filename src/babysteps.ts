@@ -12,7 +12,11 @@ let _bodyBackgroundColor: string = BackgroundColorNeutral;
 let _threadTimer: NodeJS.Timeout;
 
 
-
+if (typeof window !== "undefined") {
+  window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColorNeutral, false);
+  //@ts-ignore
+  window.command = command;
+}
 
 export function command(arg: string): void {
   let args = { Url: { AbsoluteUri: `command://${arg}/` } }
@@ -110,8 +114,4 @@ function playSound(url: string): void {
   audio.play();
 }
 
-export function main(){
-  window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColorNeutral, false);
-  //@ts-ignore
-  window.command = command;
-}
+
