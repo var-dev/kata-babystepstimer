@@ -109,3 +109,9 @@ function playSound(url: string): void {
   audio.load();
   audio.play();
 }
+
+export function main(){
+  window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColorNeutral, false);
+  //@ts-ignore
+  window.command = command;
+}

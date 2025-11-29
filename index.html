@@ -8,9 +8,8 @@
 
 <body>
   <script type="module">
-    import { command, CreateTimerHtml } from "./src/babysteps.js";
-    window.document.body.innerHTML = CreateTimerHtml("00:00", "#ffffff", false);
-    window.command = command;
+    import { main } from "./src/babysteps.js";
+    await main();
   </script>
 </body>
 
