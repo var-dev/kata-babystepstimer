@@ -1,19 +1,22 @@
 export type TimeMinutesSeconds = { minute: number; second: number; }
 
-const BackgroundColorNeutral: string = "#ffffff";
-const BackgroundColorFailed: string = "#ffcccc";
-const BackgroundColorPassed: string = "#ccffcc";
+enum BackgroundColor {
+  NEUTRAL = "#ffffff",
+  FAILED = "#ffcccc",
+  PASSED = "#ccffcc",
+}
+
 const SecondsInCycle: number = 16;
 
 
-let _bodyBackgroundColor: string = BackgroundColorNeutral;
+let _bodyBackgroundColor: string = BackgroundColor.NEUTRAL;
 let _threadTimer: NodeJS.Timeout;
 
 let _currentCycleStartTimeSeconds = 0;
 
 
 if (typeof window !== "undefined") {
-  window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColorNeutral, false);
+  window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColor.NEUTRAL, false);
   //@ts-ignore
   window.command = command;
 }
@@ -28,11 +31,11 @@ export function command(arg: string): void {
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
     clearInterval(_threadTimer)
-    document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColorNeutral, false);
+    document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColor.NEUTRAL, false);
 
   }
   else if (args.Url.AbsoluteUri == "command://reset/") {
-    _bodyBackgroundColor = BackgroundColorPassed;
+    _bodyBackgroundColor = BackgroundColor.PASSED;
     _currentCycleStartTimeSeconds = dateNowSeconds();
   }
   else if (args.Url.AbsoluteUri == "command://quit/") {
@@ -51,14 +54,14 @@ function threadTimer1() {
     if (_lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
 
     if (remainingTimeSeconds <= 13) {
-      _bodyBackgroundColor = BackgroundColorNeutral;
+      _bodyBackgroundColor = BackgroundColor.NEUTRAL;
     }
     if (remainingTimeSeconds === 5) {
       playSound("2166__suburban-grilla__bowl-struck.wav");
     }
     if (remainingTimeSeconds <= 0) {
       playSound("32304__acclivity__shipsbell.wav");
-      _bodyBackgroundColor = BackgroundColorFailed;
+      _bodyBackgroundColor = BackgroundColor.FAILED;
 
       _currentCycleStartTimeSeconds = dateNowSeconds()
       elapsedTimeSeconds = dateNowSeconds() - _currentCycleStartTimeSeconds;
