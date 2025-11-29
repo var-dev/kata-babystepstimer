@@ -23,32 +23,25 @@ export function command(arg: string): void {
 
     _threadTimer = setInterval(function () {
       let elapsedTime: number = Date.now() - _currentCycleStartTime;
+      let remainingTime: string = printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime));
+      if (_lastRemainingTime === remainingTime) { return }
 
-      if (elapsedTime >= SecondsInCycle * 1000 + 180) {
+      if (remainingTime === "00:13" ) {
+        _bodyBackgroundColor = BackgroundColorNeutral;
+      }
+      if (remainingTime === "00:10") {
+        playSound("2166__suburban-grilla__bowl-struck.wav");
+      }
+      if (remainingTime === "00:00") {
+        playSound("32304__acclivity__shipsbell.wav");
+        _bodyBackgroundColor = BackgroundColorFailed;
+        
         _currentCycleStartTime = Date.now();
         elapsedTime = Date.now() - _currentCycleStartTime;
       }
-      if (elapsedTime >= 5000 && elapsedTime < 6000 ) {
-        _bodyBackgroundColor = BackgroundColorNeutral;
-      }
-
-      let remainingTime: string = printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime));
-
-
-      if (_lastRemainingTime !== remainingTime) {
-
-        if (remainingTime == "00:10") {
-          playSound("2166__suburban-grilla__bowl-struck.wav");
-        }
-        else if (remainingTime == "00:00") {
-          playSound("32304__acclivity__shipsbell.wav");
-          _bodyBackgroundColor = BackgroundColorFailed;
-        }
-
-        document.body.innerHTML = CreateTimerHtml(remainingTime, _bodyBackgroundColor, true);
-        _lastRemainingTime = remainingTime;
-      }
-    }, 10);
+      document.body.innerHTML = CreateTimerHtml(remainingTime, _bodyBackgroundColor, true);
+      _lastRemainingTime = remainingTime;
+    }, 150);
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
     clearInterval(_threadTimer)
