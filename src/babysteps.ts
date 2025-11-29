@@ -3,10 +3,9 @@ export type TimeMinutesSeconds = { minute: number; second: number; }
 const BackgroundColorNeutral: string = "#ffffff";
 const BackgroundColorFailed: string = "#ffcccc";
 const BackgroundColorPassed: string = "#ccffcc";
-const SecondsInCycle: number = 120;
+const SecondsInCycle: number = 16;
 
 
-let _timerRunning: boolean;
 let _currentCycleStartTime: number;
 let _lastRemainingTime: string;
 let _bodyBackgroundColor: string = BackgroundColorNeutral;
@@ -21,11 +20,9 @@ export function command(arg: string): void {
   if (args.Url.AbsoluteUri == "command://start/") {
     document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColorNeutral, true);
 
-    _timerRunning = true;
     _currentCycleStartTime = Date.now();
 
     _threadTimer = setInterval(function () {
-      if (_timerRunning) {
         let elapsedTime: number = Date.now() - _currentCycleStartTime;
 
         if (elapsedTime >= SecondsInCycle * 1000 + 980) {
@@ -52,11 +49,9 @@ export function command(arg: string): void {
           document.body.innerHTML = CreateTimerHtml(remainingTime, _bodyBackgroundColor, true);
           _lastRemainingTime = remainingTime;
         }
-      }
     }, 10);
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
-    _timerRunning = false;
     clearInterval(_threadTimer)
     document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColorNeutral, false);
 
