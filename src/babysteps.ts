@@ -25,27 +25,7 @@ export function command(arg: string): void {
 
     _currentCycleStartTime = Date.now();
 
-    _threadTimer = setInterval(function () {
-      let elapsedTime: number = Date.now() - _currentCycleStartTime;
-      let remainingTime: string = printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime));
-      if (_lastRemainingTime === remainingTime) { return }
-
-      if (remainingTime === "00:13" ) {
-        _bodyBackgroundColor = BackgroundColorNeutral;
-      }
-      if (remainingTime === "00:10") {
-        playSound("2166__suburban-grilla__bowl-struck.wav");
-      }
-      if (remainingTime === "00:00") {
-        playSound("32304__acclivity__shipsbell.wav");
-        _bodyBackgroundColor = BackgroundColorFailed;
-        
-        _currentCycleStartTime = Date.now();
-        elapsedTime = Date.now() - _currentCycleStartTime;
-      }
-      document.body.innerHTML = CreateTimerHtml(remainingTime, _bodyBackgroundColor, true);
-      _lastRemainingTime = remainingTime;
-    }, 150);
+    threadTimer1();
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
     clearInterval(_threadTimer)
@@ -62,6 +42,32 @@ export function command(arg: string): void {
   }
 
 };
+
+function threadTimer1() {
+  _threadTimer = setInterval(function () {
+    let elapsedTime: number = Date.now() - _currentCycleStartTime;
+    let remainingTime: string = printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime));
+    if (_lastRemainingTime === remainingTime) { return; }
+
+    if (remainingTime === "00:13") {
+      _bodyBackgroundColor = BackgroundColorNeutral;
+    }
+    if (remainingTime === "00:10") {
+      playSound("2166__suburban-grilla__bowl-struck.wav");
+    }
+    if (remainingTime === "00:00") {
+      playSound("32304__acclivity__shipsbell.wav");
+      _bodyBackgroundColor = BackgroundColorFailed;
+
+      _currentCycleStartTime = Date.now();
+      elapsedTime = Date.now() - _currentCycleStartTime;
+    }
+    document.body.innerHTML = CreateTimerHtml(remainingTime, _bodyBackgroundColor, true);
+    _lastRemainingTime = remainingTime;
+  }, 150);
+}
+
+
 
 export function printRemainingTimeCaption(
   remaining: TimeMinutesSeconds
