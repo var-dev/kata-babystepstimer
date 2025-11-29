@@ -18,37 +18,36 @@ export function command(arg: string): void {
   let args = { Url: { AbsoluteUri: `command://${arg}/` } }
   console.log('called', arg, args.Url.AbsoluteUri);
   if (args.Url.AbsoluteUri == "command://start/") {
-    document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColorNeutral, true);
 
     _currentCycleStartTime = Date.now();
 
     _threadTimer = setInterval(function () {
-        let elapsedTime: number = Date.now() - _currentCycleStartTime;
+      let elapsedTime: number = Date.now() - _currentCycleStartTime;
 
-        if (elapsedTime >= SecondsInCycle * 1000 + 980) {
-          _currentCycleStartTime = Date.now();
-          elapsedTime = Date.now() - _currentCycleStartTime;
+      if (elapsedTime >= SecondsInCycle * 1000 + 180) {
+        _currentCycleStartTime = Date.now();
+        elapsedTime = Date.now() - _currentCycleStartTime;
+      }
+      if (elapsedTime >= 5000 && elapsedTime < 6000 ) {
+        _bodyBackgroundColor = BackgroundColorNeutral;
+      }
+
+      let remainingTime: string = printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime));
+
+
+      if (_lastRemainingTime !== remainingTime) {
+
+        if (remainingTime == "00:10") {
+          playSound("2166__suburban-grilla__bowl-struck.wav");
         }
-        if (elapsedTime >= 5000 && elapsedTime < 6000 && _bodyBackgroundColor != BackgroundColorNeutral) {
-          _bodyBackgroundColor = BackgroundColorNeutral;
+        else if (remainingTime == "00:00") {
+          playSound("32304__acclivity__shipsbell.wav");
+          _bodyBackgroundColor = BackgroundColorFailed;
         }
 
-        let remainingTime: string = printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime));
-
-
-        if (_lastRemainingTime !== remainingTime) {
-
-          if (remainingTime == "00:10") {
-            playSound("2166__suburban-grilla__bowl-struck.wav");
-          }
-          else if (remainingTime == "00:00") {
-            playSound("32304__acclivity__shipsbell.wav");
-            _bodyBackgroundColor = BackgroundColorFailed;
-          }
-
-          document.body.innerHTML = CreateTimerHtml(remainingTime, _bodyBackgroundColor, true);
-          _lastRemainingTime = remainingTime;
-        }
+        document.body.innerHTML = CreateTimerHtml(remainingTime, _bodyBackgroundColor, true);
+        _lastRemainingTime = remainingTime;
+      }
     }, 10);
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
@@ -67,11 +66,6 @@ export function command(arg: string): void {
 
 };
 
-
-export function getRemainingTimeCaption(elapsedTime: number): string {
-  return printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime))
-}
-//printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime: number))
 export function printRemainingTimeCaption(
   remaining: TimeMinutesSeconds
 ): string {
