@@ -6,10 +6,10 @@ const BackgroundColorPassed: string = "#ccffcc";
 const SecondsInCycle: number = 16;
 
 
-let _currentCycleStartTime: number;
-let _lastRemainingTime: string;
 let _bodyBackgroundColor: string = BackgroundColorNeutral;
 let _threadTimer: NodeJS.Timeout;
+
+let _currentCycleStartTimeSeconds = 0;
 
 
 if (typeof window !== "undefined") {
@@ -23,7 +23,6 @@ export function command(arg: string): void {
   console.log('called', arg, args.Url.AbsoluteUri);
   if (args.Url.AbsoluteUri == "command://start/") {
 
-    _currentCycleStartTime = Date.now();
 
     threadTimer1();
   }
@@ -33,8 +32,8 @@ export function command(arg: string): void {
 
   }
   else if (args.Url.AbsoluteUri == "command://reset/") {
-    _currentCycleStartTime = Date.now();
     _bodyBackgroundColor = BackgroundColorPassed;
+    _currentCycleStartTimeSeconds = dateNowSeconds();
   }
   else if (args.Url.AbsoluteUri == "command://quit/") {
     document.body.innerHTML = "";
@@ -44,26 +43,28 @@ export function command(arg: string): void {
 };
 
 function threadTimer1() {
+  _currentCycleStartTimeSeconds = dateNowSeconds()
+  let _lastRemainingTimeSeconds = 0;
   _threadTimer = setInterval(function () {
-    let elapsedTime: number = Date.now() - _currentCycleStartTime;
-    let remainingTime: string = printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime));
-    if (_lastRemainingTime === remainingTime) { return; }
+    let elapsedTimeSeconds: number = dateNowSeconds() - _currentCycleStartTimeSeconds;
+    let remainingTimeSeconds: number = SecondsInCycle - elapsedTimeSeconds;
+    if (_lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
 
-    if (remainingTime === "00:13") {
+    if (remainingTimeSeconds <= 13) {
       _bodyBackgroundColor = BackgroundColorNeutral;
     }
-    if (remainingTime === "00:10") {
+    if (remainingTimeSeconds === 5) {
       playSound("2166__suburban-grilla__bowl-struck.wav");
     }
-    if (remainingTime === "00:00") {
+    if (remainingTimeSeconds <= 0) {
       playSound("32304__acclivity__shipsbell.wav");
       _bodyBackgroundColor = BackgroundColorFailed;
 
-      _currentCycleStartTime = Date.now();
-      elapsedTime = Date.now() - _currentCycleStartTime;
+      _currentCycleStartTimeSeconds = dateNowSeconds()
+      elapsedTimeSeconds = dateNowSeconds() - _currentCycleStartTimeSeconds;
     }
-    document.body.innerHTML = CreateTimerHtml(remainingTime, _bodyBackgroundColor, true);
-    _lastRemainingTime = remainingTime;
+    document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)), _bodyBackgroundColor, true);
+    _lastRemainingTimeSeconds = remainingTimeSeconds;
   }, 150);
 }
 
@@ -120,4 +121,6 @@ function playSound(url: string): void {
   audio.play();
 }
 
-
+function dateNowSeconds(){
+  return Math.floor(Date.now() / 1000);
+}
