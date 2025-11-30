@@ -9,11 +9,9 @@ enum BackgroundColor {
 const SecondsInCycle: number = 16;
 
 
-let _bodyBackgroundColor: string = BackgroundColor.NEUTRAL;
 let _threadTimer: NodeJS.Timeout;
 
 let _currentCycleStartTimeSeconds = 0;
-
 
 if (typeof window !== "undefined") {
   window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColor.NEUTRAL, false);
@@ -21,11 +19,21 @@ if (typeof window !== "undefined") {
   window.command = command;
 }
 
+
 class ThreadTimer{
+  private static threadTimerInstance: ThreadTimer;
+  public  static create(): ThreadTimer {
+    if (!ThreadTimer.threadTimerInstance) {
+      ThreadTimer.threadTimerInstance = new ThreadTimer();
+    }
+    return ThreadTimer.threadTimerInstance;
+  }
+  private constructor(){}
+  private bodyBackgroundColor = BackgroundColor.NEUTRAL
   public run(){
     _currentCycleStartTimeSeconds = dateNowSeconds()
     let lastRemainingTimeSeconds = 0;
-    _threadTimer = setInterval(function () {
+    _threadTimer = setInterval( () => {
       let elapsedTimeSeconds: number = dateNowSeconds() - _currentCycleStartTimeSeconds;
       let remainingTimeSeconds: number = SecondsInCycle - elapsedTimeSeconds;
 
@@ -33,20 +41,20 @@ class ThreadTimer{
       lastRemainingTimeSeconds = remainingTimeSeconds;
 
       if (remainingTimeSeconds <= 13) {
-        _bodyBackgroundColor = BackgroundColor.NEUTRAL;
+        this.bodyBackgroundColor = BackgroundColor.NEUTRAL;
       }
       if (remainingTimeSeconds === 5) {
         playSound("2166__suburban-grilla__bowl-struck.wav");
       }
       if (remainingTimeSeconds < 0) {
         playSound("32304__acclivity__shipsbell.wav");
-        _bodyBackgroundColor = BackgroundColor.FAILED;
+        this.bodyBackgroundColor = BackgroundColor.FAILED;
 
         _currentCycleStartTimeSeconds = dateNowSeconds()
         elapsedTimeSeconds = dateNowSeconds() - _currentCycleStartTimeSeconds;
         return
       }
-      document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)), _bodyBackgroundColor, true);
+      document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)), this.bodyBackgroundColor, true);
       
     }, 150);
   }
@@ -55,7 +63,7 @@ class ThreadTimer{
     document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColor.NEUTRAL, false);
   }
   public reset(){
-    _bodyBackgroundColor = BackgroundColor.PASSED;
+    this.bodyBackgroundColor = BackgroundColor.PASSED;
     _currentCycleStartTimeSeconds = dateNowSeconds();
   }
 }
@@ -64,7 +72,7 @@ export function command(arg: string): void {
   let args = { Url: { AbsoluteUri: `command://${arg}/` } }
   console.log('called', arg, args.Url.AbsoluteUri);
 
-  const threadTimer2 = new ThreadTimer();
+  const threadTimer2 = ThreadTimer.create() 
 
   if (args.Url.AbsoluteUri == "command://start/") {
     threadTimer2.run();
@@ -82,9 +90,6 @@ export function command(arg: string): void {
 
 };
 
-function threadTimer1() {
-
-}
 
 
 export function printRemainingTimeCaption(
