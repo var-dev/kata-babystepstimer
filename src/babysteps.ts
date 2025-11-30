@@ -49,9 +49,11 @@ class ThreadTimer{
   }
   public stop(){
     clearInterval(_threadTimer)
+    document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColor.NEUTRAL, false);
   }
   public reset(){
-    _currentCycleStartTimeSeconds = dateNowSeconds()
+    _bodyBackgroundColor = BackgroundColor.PASSED;
+    _currentCycleStartTimeSeconds = dateNowSeconds();
   }
 }
 
@@ -60,22 +62,19 @@ export function command(arg: string): void {
   console.log('called', arg, args.Url.AbsoluteUri);
 
   const threadTimer2 = new ThreadTimer();
-  
+
   if (args.Url.AbsoluteUri == "command://start/") {
     threadTimer2.run();
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
-    clearInterval(_threadTimer)
-    document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColor.NEUTRAL, false);
-
+    threadTimer2.stop();
   }
   else if (args.Url.AbsoluteUri == "command://reset/") {
-    _bodyBackgroundColor = BackgroundColor.PASSED;
-    _currentCycleStartTimeSeconds = dateNowSeconds();
+    threadTimer2.reset();
   }
   else if (args.Url.AbsoluteUri == "command://quit/") {
+    threadTimer2.stop()
     document.body.innerHTML = "";
-    clearInterval(_threadTimer)
   }
 
 };
