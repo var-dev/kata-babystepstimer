@@ -21,13 +21,27 @@ if (typeof window !== "undefined") {
   window.command = command;
 }
 
+class ThreadTimer{
+  public run(){
+    threadTimer1();
+  }
+  public stop(){
+    clearInterval(_threadTimer)
+  }
+  public reset(){
+    _currentCycleStartTimeSeconds = dateNowSeconds()
+  }
+}
+
 export function command(arg: string): void {
   let args = { Url: { AbsoluteUri: `command://${arg}/` } }
   console.log('called', arg, args.Url.AbsoluteUri);
+
+  let threadTimer2 = new ThreadTimer();
   if (args.Url.AbsoluteUri == "command://start/") {
 
-
-    threadTimer1();
+    threadTimer2.run();
+    // threadTimer1();
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
     clearInterval(_threadTimer)
@@ -70,7 +84,6 @@ function threadTimer1() {
     _lastRemainingTimeSeconds = remainingTimeSeconds;
   }, 150);
 }
-
 
 
 export function printRemainingTimeCaption(
