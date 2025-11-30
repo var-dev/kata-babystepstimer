@@ -23,7 +23,29 @@ if (typeof window !== "undefined") {
 
 class ThreadTimer{
   public run(){
-    threadTimer1();
+    _currentCycleStartTimeSeconds = dateNowSeconds()
+    let _lastRemainingTimeSeconds = 0;
+    _threadTimer = setInterval(function () {
+      let elapsedTimeSeconds: number = dateNowSeconds() - _currentCycleStartTimeSeconds;
+      let remainingTimeSeconds: number = SecondsInCycle - elapsedTimeSeconds;
+      if (_lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
+
+      if (remainingTimeSeconds <= 13) {
+        _bodyBackgroundColor = BackgroundColor.NEUTRAL;
+      }
+      if (remainingTimeSeconds === 5) {
+        playSound("2166__suburban-grilla__bowl-struck.wav");
+      }
+      if (remainingTimeSeconds <= 0) {
+        playSound("32304__acclivity__shipsbell.wav");
+        _bodyBackgroundColor = BackgroundColor.FAILED;
+
+        _currentCycleStartTimeSeconds = dateNowSeconds()
+        elapsedTimeSeconds = dateNowSeconds() - _currentCycleStartTimeSeconds;
+      }
+      document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)), _bodyBackgroundColor, true);
+      _lastRemainingTimeSeconds = remainingTimeSeconds;
+    }, 150);
   }
   public stop(){
     clearInterval(_threadTimer)
@@ -37,11 +59,10 @@ export function command(arg: string): void {
   let args = { Url: { AbsoluteUri: `command://${arg}/` } }
   console.log('called', arg, args.Url.AbsoluteUri);
 
-  let threadTimer2 = new ThreadTimer();
+  const threadTimer2 = new ThreadTimer();
+  
   if (args.Url.AbsoluteUri == "command://start/") {
-
     threadTimer2.run();
-    // threadTimer1();
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
     clearInterval(_threadTimer)
@@ -60,29 +81,7 @@ export function command(arg: string): void {
 };
 
 function threadTimer1() {
-  _currentCycleStartTimeSeconds = dateNowSeconds()
-  let _lastRemainingTimeSeconds = 0;
-  _threadTimer = setInterval(function () {
-    let elapsedTimeSeconds: number = dateNowSeconds() - _currentCycleStartTimeSeconds;
-    let remainingTimeSeconds: number = SecondsInCycle - elapsedTimeSeconds;
-    if (_lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
 
-    if (remainingTimeSeconds <= 13) {
-      _bodyBackgroundColor = BackgroundColor.NEUTRAL;
-    }
-    if (remainingTimeSeconds === 5) {
-      playSound("2166__suburban-grilla__bowl-struck.wav");
-    }
-    if (remainingTimeSeconds <= 0) {
-      playSound("32304__acclivity__shipsbell.wav");
-      _bodyBackgroundColor = BackgroundColor.FAILED;
-
-      _currentCycleStartTimeSeconds = dateNowSeconds()
-      elapsedTimeSeconds = dateNowSeconds() - _currentCycleStartTimeSeconds;
-    }
-    document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)), _bodyBackgroundColor, true);
-    _lastRemainingTimeSeconds = remainingTimeSeconds;
-  }, 150);
 }
 
 
