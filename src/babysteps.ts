@@ -6,36 +6,37 @@ enum BackgroundColor {
   PASSED = "#ccffcc",
 }
 
-const SecondsInCycle: number = 16;
-
-
-let _threadTimer: NodeJS.Timeout;
-
-let _currentCycleStartTimeSeconds = 0;
-
 if (typeof window !== "undefined") {
   window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColor.NEUTRAL, false);
   //@ts-ignore
   window.command = command;
 }
 
-
 class ThreadTimer{
-  private static threadTimerInstance: ThreadTimer;
+  public  static readonly CYCLE_SECONDS = 16;
+  private static threadTimerInstance: ThreadTimer | undefined;
   public  static create(): ThreadTimer {
     if (!ThreadTimer.threadTimerInstance) {
       ThreadTimer.threadTimerInstance = new ThreadTimer();
     }
     return ThreadTimer.threadTimerInstance;
   }
+  public static destroy(): void {
+    if (ThreadTimer.threadTimerInstance) {
+      clearInterval(ThreadTimer.threadTimerInstance.threadTimer)
+      ThreadTimer.threadTimerInstance = undefined;
+    }
+  }
   private constructor(){}
+  private threadTimer!: NodeJS.Timeout;
   private bodyBackgroundColor = BackgroundColor.NEUTRAL
+  private currentCycleStartTimeSeconds=0
   public run(){
-    _currentCycleStartTimeSeconds = dateNowSeconds()
+    this.currentCycleStartTimeSeconds = dateNowSeconds()
     let lastRemainingTimeSeconds = 0;
-    _threadTimer = setInterval( () => {
-      let elapsedTimeSeconds: number = dateNowSeconds() - _currentCycleStartTimeSeconds;
-      let remainingTimeSeconds: number = SecondsInCycle - elapsedTimeSeconds;
+    this.threadTimer = setInterval( () => {
+      let elapsedTimeSeconds: number = dateNowSeconds() - this.currentCycleStartTimeSeconds;
+      let remainingTimeSeconds: number = ThreadTimer.CYCLE_SECONDS - elapsedTimeSeconds;
 
       if (lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
       lastRemainingTimeSeconds = remainingTimeSeconds;
@@ -50,8 +51,8 @@ class ThreadTimer{
         playSound("32304__acclivity__shipsbell.wav");
         this.bodyBackgroundColor = BackgroundColor.FAILED;
 
-        _currentCycleStartTimeSeconds = dateNowSeconds()
-        elapsedTimeSeconds = dateNowSeconds() - _currentCycleStartTimeSeconds;
+        this.currentCycleStartTimeSeconds = dateNowSeconds()
+        elapsedTimeSeconds = dateNowSeconds() - this.currentCycleStartTimeSeconds;
         return
       }
       document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)), this.bodyBackgroundColor, true);
@@ -59,12 +60,11 @@ class ThreadTimer{
     }, 150);
   }
   public stop(){
-    clearInterval(_threadTimer)
-    document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(0)), BackgroundColor.NEUTRAL, false);
+    ThreadTimer.destroy()
   }
   public reset(){
     this.bodyBackgroundColor = BackgroundColor.PASSED;
-    _currentCycleStartTimeSeconds = dateNowSeconds();
+    this.currentCycleStartTimeSeconds = dateNowSeconds();
   }
 }
 
@@ -79,17 +79,16 @@ export function command(arg: string): void {
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
     threadTimer2.stop();
+    window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColor.NEUTRAL, false);
   }
   else if (args.Url.AbsoluteUri == "command://reset/") {
     threadTimer2.reset();
   }
   else if (args.Url.AbsoluteUri == "command://quit/") {
     threadTimer2.stop()
-    document.body.innerHTML = "";
+    window.document.body.innerHTML = "";
   }
-
 };
-
 
 
 export function printRemainingTimeCaption(
@@ -103,7 +102,7 @@ export function printRemainingTimeCaption(
 }
 
 function getRemainingMinutesSeconds(elapsedTime: number) {
-  let remainingTime: Date = new Date(SecondsInCycle * 1000 - elapsedTime);
+  let remainingTime: Date = new Date(ThreadTimer.CYCLE_SECONDS * 1000 - elapsedTime);
   return {
     minute: remainingTime.getMinutes(),
     second: remainingTime.getSeconds(),
