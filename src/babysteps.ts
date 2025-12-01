@@ -1,4 +1,5 @@
 export type TimeMinutesSeconds = { minute: number; second: number; }
+type RenderTimerCallBackFn = (timerText: string, bodyColor: string, running: boolean)=>void
 
 declare global {
   interface Window {
@@ -20,9 +21,9 @@ if (typeof window !== "undefined") {
 class ThreadTimer{
   public  static readonly CYCLE_SECONDS = 16;
   private static threadTimerInstance: ThreadTimer | undefined;
-  public  static create(): ThreadTimer {
+  public  static create(renderTimerCallBack: ()=>RenderTimerCallBackFn): ThreadTimer {
     if (!ThreadTimer.threadTimerInstance) {
-      ThreadTimer.threadTimerInstance = new ThreadTimer();
+      ThreadTimer.threadTimerInstance = new ThreadTimer(renderTimerCallBack);
     }
     return ThreadTimer.threadTimerInstance;
   }
@@ -32,7 +33,10 @@ class ThreadTimer{
       ThreadTimer.threadTimerInstance = undefined;
     }
   }
-  private constructor(){}
+  private renderTimerCallBackFn: RenderTimerCallBackFn
+  private constructor( renderTimerCallBack: ()=>RenderTimerCallBackFn){
+    this.renderTimerCallBackFn = renderTimerCallBack()
+  }
   private threadTimer!: NodeJS.Timeout;
   private bodyBackgroundColor!: BackgroundColor;
   private currentCycleStartTimeSeconds!: number;
@@ -58,8 +62,12 @@ class ThreadTimer{
         elapsedTimeSeconds = dateNowSeconds() - this.currentCycleStartTimeSeconds;
         return
       }
-      document.body.innerHTML = CreateTimerHtml(printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)), this.bodyBackgroundColor, true);
-      
+
+      this.renderTimerCallBackFn(
+        printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)),
+        this.bodyBackgroundColor,
+        true
+      )
     }, 150);
   }
   public stop(){
@@ -75,7 +83,7 @@ export function command(arg: string): void {
   let args = { Url: { AbsoluteUri: `command://${arg}/` } }
   console.log('called', arg, args.Url.AbsoluteUri);
 
-  const threadTimer2 = ThreadTimer.create() 
+  const threadTimer2 = ThreadTimer.create(drawTimerHtml) 
 
   if (args.Url.AbsoluteUri == "command://start/") {
     threadTimer2.run();
@@ -134,7 +142,12 @@ export function CreateTimerHtml(timerText: string, bodyColor: string, running: b
   timerHtml += "<a style=\"color: #555555;\" href=\"javascript:command('quit');\">Quit</a> ";
   timerHtml += "</div></div>"
   return timerHtml;
+}
 
+function drawTimerHtml(): (timerText: string, bodyColor: string, running: boolean)=>void{
+  return function(timerText: string, bodyColor: string, running: boolean) {
+    window.document.body.innerHTML = CreateTimerHtml(timerText, bodyColor, running);
+  }
 }
 
 function playSound(url: string): void {
