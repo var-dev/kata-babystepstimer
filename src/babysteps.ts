@@ -1,5 +1,12 @@
 export type TimeMinutesSeconds = { minute: number; second: number; }
 type RenderTimerCallBackFn = (timerText: string, bodyColor: string, running: boolean)=>void
+type SetIntervalCallBackParams = {
+    lastRemainingTimeSeconds: number, 
+    bodyBackgroundColor: BackgroundColor,
+    currentCycleStartTimeSeconds: number,
+    renderTimerCallBackFn: RenderTimerCallBackFn,
+    cycleDurationSeconds: number
+}
 
 declare global {
   interface Window {
@@ -33,49 +40,54 @@ class ThreadTimer{
       ThreadTimer.threadTimerInstance = undefined;
     }
   }
-  private renderTimerCallBackFn: RenderTimerCallBackFn
+  // private renderTimerCallBackFn: RenderTimerCallBackFn
   private constructor( renderTimerCallBack: ()=>RenderTimerCallBackFn){
-    this.renderTimerCallBackFn = renderTimerCallBack()
+    this.setIntervalCallBackParams.renderTimerCallBackFn = renderTimerCallBack()
   }
   private threadTimer!: NodeJS.Timeout;
-  private bodyBackgroundColor!: BackgroundColor;
-  private currentCycleStartTimeSeconds!: number;
+  private setIntervalCallBackParams = {
+    lastRemainingTimeSeconds:0, 
+    bodyBackgroundColor: BackgroundColor.NEUTRAL,
+    currentCycleStartTimeSeconds: 0,
+    renderTimerCallBackFn: undefined as unknown as RenderTimerCallBackFn,
+    cycleDurationSeconds: ThreadTimer.CYCLE_SECONDS
+  };
   public run(){
-    this.reset(BackgroundColor.NEUTRAL)
-    let lastRemainingTimeSeconds = 0;
-    this.threadTimer = setInterval( () => {
-      let elapsedTimeSeconds: number = dateNowSeconds() - this.currentCycleStartTimeSeconds;
-      let remainingTimeSeconds: number = ThreadTimer.CYCLE_SECONDS - elapsedTimeSeconds;
+    this.setIntervalCallBackParams.currentCycleStartTimeSeconds = dateNowSeconds();
+    this.threadTimer = setInterval( (param: SetIntervalCallBackParams): void => {
 
-      if (lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
-      lastRemainingTimeSeconds = remainingTimeSeconds;
+      let elapsedTimeSeconds: number = dateNowSeconds() - param.currentCycleStartTimeSeconds;
+      let remainingTimeSeconds: number = param.cycleDurationSeconds - elapsedTimeSeconds;
 
-      if (remainingTimeSeconds <= 13) {
-        this.bodyBackgroundColor = BackgroundColor.NEUTRAL;
+      if (param.lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
+      param.lastRemainingTimeSeconds = remainingTimeSeconds;
+
+      if (remainingTimeSeconds <= 12) {
+        param.bodyBackgroundColor = BackgroundColor.NEUTRAL;
       }
       if (remainingTimeSeconds === 5) {
         playSound("2166__suburban-grilla__bowl-struck.wav");
       }
       if (remainingTimeSeconds < 0) {
         playSound("32304__acclivity__shipsbell.wav");
-        this.reset(BackgroundColor.FAILED)
-        elapsedTimeSeconds = dateNowSeconds() - this.currentCycleStartTimeSeconds;
+        param.bodyBackgroundColor = BackgroundColor.FAILED;
+        param.currentCycleStartTimeSeconds = dateNowSeconds()
         return
       }
 
-      this.renderTimerCallBackFn(
+      param.renderTimerCallBackFn(
         printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)),
-        this.bodyBackgroundColor,
+        param.bodyBackgroundColor,
         true
       )
-    }, 150);
+    }, 150, this.setIntervalCallBackParams);
   }
   public stop(){
     ThreadTimer.destroy()
   }
   public reset(aBodyBackgroundColor: BackgroundColor){
-    this.bodyBackgroundColor = aBodyBackgroundColor;
-    this.currentCycleStartTimeSeconds = dateNowSeconds();
+    this.setIntervalCallBackParams.bodyBackgroundColor = aBodyBackgroundColor;
+    this.setIntervalCallBackParams.currentCycleStartTimeSeconds = dateNowSeconds();
   }
 }
 
