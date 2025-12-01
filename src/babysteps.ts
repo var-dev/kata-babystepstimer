@@ -1,5 +1,11 @@
 export type TimeMinutesSeconds = { minute: number; second: number; }
 
+declare global {
+  interface Window {
+    command: (arg: string) => void;
+  }
+}
+
 enum BackgroundColor {
   NEUTRAL = "#ffffff",
   FAILED = "#ffcccc",
@@ -8,7 +14,6 @@ enum BackgroundColor {
 
 if (typeof window !== "undefined") {
   window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColor.NEUTRAL, false);
-  //@ts-ignore
   window.command = command;
 }
 
@@ -29,10 +34,10 @@ class ThreadTimer{
   }
   private constructor(){}
   private threadTimer!: NodeJS.Timeout;
-  private bodyBackgroundColor = BackgroundColor.NEUTRAL
-  private currentCycleStartTimeSeconds=0
+  private bodyBackgroundColor!: BackgroundColor;
+  private currentCycleStartTimeSeconds!: number;
   public run(){
-    this.currentCycleStartTimeSeconds = dateNowSeconds()
+    this.reset(BackgroundColor.NEUTRAL)
     let lastRemainingTimeSeconds = 0;
     this.threadTimer = setInterval( () => {
       let elapsedTimeSeconds: number = dateNowSeconds() - this.currentCycleStartTimeSeconds;
@@ -49,9 +54,7 @@ class ThreadTimer{
       }
       if (remainingTimeSeconds < 0) {
         playSound("32304__acclivity__shipsbell.wav");
-        this.bodyBackgroundColor = BackgroundColor.FAILED;
-
-        this.currentCycleStartTimeSeconds = dateNowSeconds()
+        this.reset(BackgroundColor.FAILED)
         elapsedTimeSeconds = dateNowSeconds() - this.currentCycleStartTimeSeconds;
         return
       }
@@ -62,8 +65,8 @@ class ThreadTimer{
   public stop(){
     ThreadTimer.destroy()
   }
-  public reset(){
-    this.bodyBackgroundColor = BackgroundColor.PASSED;
+  public reset(aBodyBackgroundColor: BackgroundColor){
+    this.bodyBackgroundColor = aBodyBackgroundColor;
     this.currentCycleStartTimeSeconds = dateNowSeconds();
   }
 }
@@ -82,7 +85,7 @@ export function command(arg: string): void {
     window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColor.NEUTRAL, false);
   }
   else if (args.Url.AbsoluteUri == "command://reset/") {
-    threadTimer2.reset();
+    threadTimer2.reset(BackgroundColor.PASSED);
   }
   else if (args.Url.AbsoluteUri == "command://quit/") {
     threadTimer2.stop()
