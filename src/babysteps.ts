@@ -58,33 +58,11 @@ class ThreadTimer{
   };
   public run(){
     this.setIntervalCallBackParams.currentCycleStartTimeSeconds = dateNowSeconds();
-    this.threadTimer = setInterval( (params: SetIntervalCallBackParams): void => {
-
-      let elapsedTimeSeconds: number = params.dateNowSecondsFn() - params.currentCycleStartTimeSeconds;
-      let remainingTimeSeconds: number = params.cycleDurationSeconds - elapsedTimeSeconds;
-
-      if (params.lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
-      params.lastRemainingTimeSeconds = remainingTimeSeconds;
-
-      if (remainingTimeSeconds <= 13) {
-        params.bodyBackgroundColor = BackgroundColor.NEUTRAL;
-      }
-      if (remainingTimeSeconds === 5) {
-        params.playSoundFn("2166__suburban-grilla__bowl-struck.wav");
-      }
-      if (remainingTimeSeconds < 0) {
-        params.playSoundFn("32304__acclivity__shipsbell.wav");
-        params.bodyBackgroundColor = BackgroundColor.FAILED;
-        params.currentCycleStartTimeSeconds = params.dateNowSecondsFn()
-        return
-      }
-
-      params.renderTimerCallBackFn(
-        printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)),
-        params.bodyBackgroundColor,
-        true
-      )
-    }, 150, this.setIntervalCallBackParams);
+    this.threadTimer = setInterval(
+      setIntervalCallBack, 
+      150, 
+      this.setIntervalCallBackParams
+    );
   }
   public stop(){
     ThreadTimer.destroy()
@@ -175,4 +153,33 @@ function playSound(url: string): void {
 
 function dateNowSeconds(){
   return Math.floor(Date.now() / 1000);
+}
+
+function setIntervalCallBack(params: SetIntervalCallBackParams): void {
+  let elapsedTimeSeconds: number = params.dateNowSecondsFn() - params.currentCycleStartTimeSeconds;
+  let remainingTimeSeconds: number = params.cycleDurationSeconds - elapsedTimeSeconds;
+  
+  if (params.lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
+  params.lastRemainingTimeSeconds = remainingTimeSeconds;
+
+  if (elapsedTimeSeconds > 1) {
+    params.bodyBackgroundColor = BackgroundColor.NEUTRAL;
+  }
+  if (remainingTimeSeconds === 5) {
+    params.playSoundFn("2166__suburban-grilla__bowl-struck.wav");
+  }
+  if (remainingTimeSeconds === 0) {
+    params.playSoundFn("32304__acclivity__shipsbell.wav");
+    params.bodyBackgroundColor = BackgroundColor.FAILED;
+  }
+  if (remainingTimeSeconds < 0) {
+    params.currentCycleStartTimeSeconds = params.dateNowSecondsFn()
+    return
+  }
+
+  params.renderTimerCallBackFn(
+    printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)),
+    params.bodyBackgroundColor,
+    true
+  )
 }
