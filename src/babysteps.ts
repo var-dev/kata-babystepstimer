@@ -1,11 +1,14 @@
 export type TimeMinutesSeconds = { minute: number; second: number; }
 type RenderTimerCallBackFn = (timerText: string, bodyColor: string, running: boolean)=>void
+type PlaySoundFn = (url: string) => void
 type SetIntervalCallBackParams = {
     lastRemainingTimeSeconds: number, 
     bodyBackgroundColor: BackgroundColor,
     currentCycleStartTimeSeconds: number,
     renderTimerCallBackFn: RenderTimerCallBackFn,
-    cycleDurationSeconds: number
+    cycleDurationSeconds: number,
+    playSoundFn: PlaySoundFn;
+    dateNowSecondsFn: () => number
 }
 
 declare global {
@@ -26,9 +29,9 @@ if (typeof window !== "undefined") {
 }
 
 class ThreadTimer{
-  public  static readonly CYCLE_SECONDS = 16;
+  public  static readonly CYCLE_SECONDS = 15;
   private static threadTimerInstance: ThreadTimer | undefined;
-  public  static create(renderTimerCallBack: ()=>RenderTimerCallBackFn): ThreadTimer {
+  public  static create(renderTimerCallBack: RenderTimerCallBackFn): ThreadTimer {
     if (!ThreadTimer.threadTimerInstance) {
       ThreadTimer.threadTimerInstance = new ThreadTimer(renderTimerCallBack);
     }
@@ -40,9 +43,8 @@ class ThreadTimer{
       ThreadTimer.threadTimerInstance = undefined;
     }
   }
-  // private renderTimerCallBackFn: RenderTimerCallBackFn
-  private constructor( renderTimerCallBack: ()=>RenderTimerCallBackFn){
-    this.setIntervalCallBackParams.renderTimerCallBackFn = renderTimerCallBack()
+  private constructor( renderTimerCallBack: RenderTimerCallBackFn){
+    this.setIntervalCallBackParams.renderTimerCallBackFn = renderTimerCallBack
   }
   private threadTimer!: NodeJS.Timeout;
   private setIntervalCallBackParams = {
@@ -50,34 +52,36 @@ class ThreadTimer{
     bodyBackgroundColor: BackgroundColor.NEUTRAL,
     currentCycleStartTimeSeconds: 0,
     renderTimerCallBackFn: undefined as unknown as RenderTimerCallBackFn,
-    cycleDurationSeconds: ThreadTimer.CYCLE_SECONDS
+    cycleDurationSeconds: ThreadTimer.CYCLE_SECONDS,
+    playSoundFn: playSound,
+    dateNowSecondsFn: dateNowSeconds,
   };
   public run(){
     this.setIntervalCallBackParams.currentCycleStartTimeSeconds = dateNowSeconds();
-    this.threadTimer = setInterval( (param: SetIntervalCallBackParams): void => {
+    this.threadTimer = setInterval( (params: SetIntervalCallBackParams): void => {
 
-      let elapsedTimeSeconds: number = dateNowSeconds() - param.currentCycleStartTimeSeconds;
-      let remainingTimeSeconds: number = param.cycleDurationSeconds - elapsedTimeSeconds;
+      let elapsedTimeSeconds: number = params.dateNowSecondsFn() - params.currentCycleStartTimeSeconds;
+      let remainingTimeSeconds: number = params.cycleDurationSeconds - elapsedTimeSeconds;
 
-      if (param.lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
-      param.lastRemainingTimeSeconds = remainingTimeSeconds;
+      if (params.lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
+      params.lastRemainingTimeSeconds = remainingTimeSeconds;
 
-      if (remainingTimeSeconds <= 12) {
-        param.bodyBackgroundColor = BackgroundColor.NEUTRAL;
+      if (remainingTimeSeconds <= 13) {
+        params.bodyBackgroundColor = BackgroundColor.NEUTRAL;
       }
       if (remainingTimeSeconds === 5) {
-        playSound("2166__suburban-grilla__bowl-struck.wav");
+        params.playSoundFn("2166__suburban-grilla__bowl-struck.wav");
       }
       if (remainingTimeSeconds < 0) {
-        playSound("32304__acclivity__shipsbell.wav");
-        param.bodyBackgroundColor = BackgroundColor.FAILED;
-        param.currentCycleStartTimeSeconds = dateNowSeconds()
+        params.playSoundFn("32304__acclivity__shipsbell.wav");
+        params.bodyBackgroundColor = BackgroundColor.FAILED;
+        params.currentCycleStartTimeSeconds = params.dateNowSecondsFn()
         return
       }
 
-      param.renderTimerCallBackFn(
+      params.renderTimerCallBackFn(
         printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)),
-        param.bodyBackgroundColor,
+        params.bodyBackgroundColor,
         true
       )
     }, 150, this.setIntervalCallBackParams);
@@ -156,11 +160,10 @@ export function CreateTimerHtml(timerText: string, bodyColor: string, running: b
   return timerHtml;
 }
 
-function drawTimerHtml(): (timerText: string, bodyColor: string, running: boolean)=>void{
-  return function(timerText: string, bodyColor: string, running: boolean) {
-    window.document.body.innerHTML = CreateTimerHtml(timerText, bodyColor, running);
-  }
+function drawTimerHtml(timerText: string, bodyColor: string, running: boolean) {
+  window.document.body.innerHTML = CreateTimerHtml(timerText, bodyColor, running);
 }
+
 
 function playSound(url: string): void {
   let audio = new Audio();
