@@ -28,12 +28,34 @@ if (typeof window !== "undefined") {
   window.command = command;
 }
 
+class SetIntervalCallBack implements SetIntervalCallBackParams {
+  public readonly cycleDurationSeconds: number = ThreadTimer.CYCLE_SECONDS;
+  public lastRemainingTimeSeconds: number = 0;
+  public currentCycleStartTimeSeconds: number = 0;
+  public bodyBackgroundColor: BackgroundColor = BackgroundColor.NEUTRAL;
+  constructor(
+    renderTimerCallBack: RenderTimerCallBackFn,
+    playSound: PlaySoundFn,
+    dateNowSeconds: () => number
+  ){
+    this.renderTimerCallBackFn = renderTimerCallBack.bind(this);
+    this.playSoundFn = playSound.bind(this);
+    this.dateNowSecondsFn = dateNowSeconds.bind(this);
+  }
+  renderTimerCallBackFn: RenderTimerCallBackFn;
+  playSoundFn: PlaySoundFn;
+  dateNowSecondsFn: () => number;
+}
 class ThreadTimer{
   public  static readonly CYCLE_SECONDS = 15;
   private static threadTimerInstance: ThreadTimer | undefined;
   public  static create(renderTimerCallBack: RenderTimerCallBackFn): ThreadTimer {
     if (!ThreadTimer.threadTimerInstance) {
-      ThreadTimer.threadTimerInstance = new ThreadTimer(renderTimerCallBack);
+      ThreadTimer.threadTimerInstance = new ThreadTimer(new SetIntervalCallBack(
+        renderTimerCallBack,
+        playSound,
+        dateNowSeconds
+      ));
     }
     return ThreadTimer.threadTimerInstance;
   }
@@ -43,19 +65,11 @@ class ThreadTimer{
       ThreadTimer.threadTimerInstance = undefined;
     }
   }
-  private constructor( renderTimerCallBack: RenderTimerCallBackFn){
-    this.setIntervalCallBackParams.renderTimerCallBackFn = renderTimerCallBack
+  private constructor( params: SetIntervalCallBack){
+    this.setIntervalCallBackParams = params
   }
   private threadTimer!: NodeJS.Timeout;
-  private setIntervalCallBackParams = {
-    lastRemainingTimeSeconds:0, 
-    bodyBackgroundColor: BackgroundColor.NEUTRAL,
-    currentCycleStartTimeSeconds: 0,
-    renderTimerCallBackFn: undefined as unknown as RenderTimerCallBackFn,
-    cycleDurationSeconds: ThreadTimer.CYCLE_SECONDS,
-    playSoundFn: playSound,
-    dateNowSecondsFn: dateNowSeconds,
-  };
+  private setIntervalCallBackParams: SetIntervalCallBack;
   public run(){
     this.setIntervalCallBackParams.currentCycleStartTimeSeconds = dateNowSeconds();
     this.threadTimer = setInterval(
