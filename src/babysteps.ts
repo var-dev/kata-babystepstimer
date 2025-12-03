@@ -1,24 +1,18 @@
 export type TimeMinutesSeconds = { minute: number; second: number; }
 type Times = { elapsed: number; remaining: number; }
-type RenderTimerCallBackFn = (timerText: string, bodyColor: string, running: boolean)=>void
-type PlaySoundFn = (url: string) => void
-type SetIntervalCallBackParams = {
-    lastRemainingTimeSeconds: number, 
-    bodyBackgroundColor: BackgroundColor,
-    currentCycleStartTimeSeconds: number,
-    renderTimerCallBackFn: RenderTimerCallBackFn,
-    cycleDurationSeconds: number,
-    playSoundFn: PlaySoundFn;
-    dateNowSecondsFn: () => number
-}
+type DrawTimerWindow = (timerText: string, bodyColor: string, running: boolean)=>void
+type CreateAudioVisualEffect = (url: string) => void
+
 
 declare global {
   interface Window {
     command: (arg: string) => void;
   }
 }
-
-enum BackgroundColor {
+export enum Timer  {
+  CYCLE_SECONDS = 15,
+}
+export enum BackgroundColor {
   NEUTRAL = "#ffffff",
   FAILED = "#ffcccc",
   PASSED = "#ccffcc",
@@ -29,43 +23,43 @@ if (typeof window !== "undefined") {
   window.command = command;
 }
 
-class SetIntervalCallBack implements SetIntervalCallBackParams {
-  public readonly cycleDurationSeconds: number = ThreadTimer.CYCLE_SECONDS;
+class SetIntervalCallBack {
+  public readonly cycleDurationSeconds: number = Timer.CYCLE_SECONDS;
   public lastRemainingTimeSeconds: number = 0;
   public currentCycleStartTimeSeconds: number = 0;
   public bodyBackgroundColor: BackgroundColor = BackgroundColor.NEUTRAL;
   constructor(
-    renderTimerCallBack: RenderTimerCallBackFn,
-    playSound: PlaySoundFn,
-    dateNowSeconds: () => number
+    drawTimerWindow: DrawTimerWindow,
+    createEffect: CreateAudioVisualEffect,
+    getDateNowSeconds: () => number
   ){
-    this.renderTimerCallBackFn = renderTimerCallBack.bind(this);
-    this.playSoundFn = playSound.bind(this);
-    this.dateNowSecondsFn = dateNowSeconds.bind(this);
+    this.drawTimerWindow = drawTimerWindow.bind(this);
+    this.createEffect = createEffect.bind(this);
+    this.getDateNowSeconds = getDateNowSeconds.bind(this);
     this.currentCycleReset();
   }
-  renderTimerCallBackFn: RenderTimerCallBackFn;
-  playSoundFn: PlaySoundFn;
-  dateNowSecondsFn: () => number;
+  drawTimerWindow: DrawTimerWindow;
+  createEffect: CreateAudioVisualEffect;
+  getDateNowSeconds: () => number;
   calculateTimes(): Times{
-    const elapsed = this.dateNowSecondsFn() - this.currentCycleStartTimeSeconds
+    const elapsed = this.getDateNowSeconds() - this.currentCycleStartTimeSeconds
     return {elapsed, remaining: this.cycleDurationSeconds - elapsed}
   }
   currentCycleReset(){
-    this.currentCycleStartTimeSeconds = this.dateNowSecondsFn()
+    this.currentCycleStartTimeSeconds = this.getDateNowSeconds()
   }
   actionTimeRunsOut(){
-    this.playSoundFn("2166__suburban-grilla__bowl-struck.wav")
+    this.createEffect("2166__suburban-grilla__bowl-struck.wav")
   }
   actionFailed(){
-    this.playSoundFn("32304__acclivity__shipsbell.wav")
+    this.createEffect("32304__acclivity__shipsbell.wav")
     this.bodyBackgroundColor = BackgroundColor.FAILED;
   }
   setBackgroundColorNeutral(){
     this.bodyBackgroundColor = BackgroundColor.NEUTRAL;
   }
   updateTimerWindow(elapsedTime: number){
-    this.renderTimerCallBackFn(
+    this.drawTimerWindow(
       printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime * 1000)),
       this.bodyBackgroundColor,
       true)
@@ -93,12 +87,11 @@ class SetIntervalCallBack implements SetIntervalCallBackParams {
   }
 }
 class ThreadTimer{
-  public  static readonly CYCLE_SECONDS = 15;
   private static threadTimerInstance: ThreadTimer | undefined;
-  public  static create(renderTimerCallBack: RenderTimerCallBackFn): ThreadTimer {
+  public  static create(drawTimerWindow: DrawTimerWindow): ThreadTimer {
     if (!ThreadTimer.threadTimerInstance) {
       ThreadTimer.threadTimerInstance = new ThreadTimer(new SetIntervalCallBack(
-        renderTimerCallBack,
+        drawTimerWindow,
         playSound,
         dateNowSeconds
       ));
@@ -111,14 +104,14 @@ class ThreadTimer{
       ThreadTimer.threadTimerInstance = undefined;
     }
   }
-  private constructor( params: SetIntervalCallBack){
-    this.setIntervalCallBackParams = params
+  private constructor( callbackObject: SetIntervalCallBack){
+    this.setIntervalCallBack = callbackObject
   }
   private threadTimer!: NodeJS.Timeout;
-  private setIntervalCallBackParams: SetIntervalCallBack;
+  private setIntervalCallBack: SetIntervalCallBack;
   public run(){
     this.threadTimer = setInterval(
-      this.setIntervalCallBackParams.handler.bind(this.setIntervalCallBackParams), 
+      this.setIntervalCallBack.handler.bind(this.setIntervalCallBack), 
       150, 
     );
   }
@@ -126,8 +119,8 @@ class ThreadTimer{
     ThreadTimer.destroy()
   }
   public reset(aBodyBackgroundColor: BackgroundColor){
-    this.setIntervalCallBackParams.bodyBackgroundColor = aBodyBackgroundColor;
-    this.setIntervalCallBackParams.currentCycleStartTimeSeconds = dateNowSeconds();
+    this.setIntervalCallBack.bodyBackgroundColor = aBodyBackgroundColor;
+    this.setIntervalCallBack.currentCycleStartTimeSeconds = dateNowSeconds();
   }
 }
 
@@ -135,20 +128,20 @@ export function command(arg: string): void {
   let args = { Url: { AbsoluteUri: `command://${arg}/` } }
   console.log('called', arg, args.Url.AbsoluteUri);
 
-  const threadTimer2 = ThreadTimer.create(drawTimerHtml) 
+  const threadTimer = ThreadTimer.create(drawTimerHtml) 
 
   if (args.Url.AbsoluteUri == "command://start/") {
-    threadTimer2.run();
+    threadTimer.run();
   }
   else if (args.Url.AbsoluteUri == "command://stop/") {
-    threadTimer2.stop();
+    threadTimer.stop();
     window.document.body.innerHTML = CreateTimerHtml("00:00", BackgroundColor.NEUTRAL, false);
   }
   else if (args.Url.AbsoluteUri == "command://reset/") {
-    threadTimer2.reset(BackgroundColor.PASSED);
+    threadTimer.reset(BackgroundColor.PASSED);
   }
   else if (args.Url.AbsoluteUri == "command://quit/") {
-    threadTimer2.stop()
+    threadTimer.stop()
     window.document.body.innerHTML = "";
   }
 };
@@ -164,15 +157,15 @@ export function printRemainingTimeCaption(
   );
 }
 
-function getRemainingMinutesSeconds(elapsedTime: number) {
-  let remainingTime: Date = new Date(ThreadTimer.CYCLE_SECONDS * 1000 - elapsedTime);
+export function getRemainingMinutesSeconds(elapsedTimeSeconds: number) {
+  let remainingTime: Date = new Date(Timer.CYCLE_SECONDS * 1000 - elapsedTimeSeconds);
   return {
     minute: remainingTime.getMinutes(),
     second: remainingTime.getSeconds(),
   };
 }
 
-function printZeroPrefixedNumber(number: number): string {
+export function printZeroPrefixedNumber(number: number): string {
   if (number < 10) { return `0${number}`; }
   return `${number}`;
 }
