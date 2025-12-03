@@ -42,6 +42,7 @@ class SetIntervalCallBack implements SetIntervalCallBackParams {
     this.renderTimerCallBackFn = renderTimerCallBack.bind(this);
     this.playSoundFn = playSound.bind(this);
     this.dateNowSecondsFn = dateNowSeconds.bind(this);
+    this.currentCycleReset();
   }
   renderTimerCallBackFn: RenderTimerCallBackFn;
   playSoundFn: PlaySoundFn;
@@ -95,7 +96,6 @@ class ThreadTimer{
   private threadTimer!: NodeJS.Timeout;
   private setIntervalCallBackParams: SetIntervalCallBack;
   public run(){
-    this.setIntervalCallBackParams.currentCycleStartTimeSeconds = dateNowSeconds();
     this.threadTimer = setInterval(
       setIntervalCallBack, 
       150, 
