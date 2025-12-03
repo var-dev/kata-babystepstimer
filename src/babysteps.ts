@@ -1,4 +1,5 @@
 export type TimeMinutesSeconds = { minute: number; second: number; }
+type Times = { elapsed: number; remaining: number; }
 type RenderTimerCallBackFn = (timerText: string, bodyColor: string, running: boolean)=>void
 type PlaySoundFn = (url: string) => void
 type SetIntervalCallBackParams = {
@@ -45,10 +46,9 @@ class SetIntervalCallBack implements SetIntervalCallBackParams {
   renderTimerCallBackFn: RenderTimerCallBackFn;
   playSoundFn: PlaySoundFn;
   dateNowSecondsFn: () => number;
-  calculateTimes(){
+  calculateTimes(): Times{
     const elapsed = this.dateNowSecondsFn() - this.currentCycleStartTimeSeconds
-    const remaining = this.cycleDurationSeconds - elapsed
-    return {elapsed, remaining}
+    return {elapsed, remaining: this.cycleDurationSeconds - elapsed}
   }
   currentCycleReset(){
     this.currentCycleStartTimeSeconds = this.dateNowSecondsFn()
@@ -194,24 +194,23 @@ function dateNowSeconds(){
 }
 
 function setIntervalCallBack(params: SetIntervalCallBack): void {
-  let elapsedTimeSeconds: number = params.calculateTimes().elapsed
-  let remainingTimeSeconds: number = params.calculateTimes().remaining;
+  let times: Times = params.calculateTimes()
   
-  if (params.lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
-  params.lastRemainingTimeSeconds = remainingTimeSeconds;
+  if (params.lastRemainingTimeSeconds === times.remaining) { return; }
+  params.lastRemainingTimeSeconds = times.remaining;
 
-  if (elapsedTimeSeconds > 1) {
+  if (times.elapsed > 1) {
     params.setBackgroundColorNeutral()
   }
-  if (remainingTimeSeconds === 5) {
+  if (times.remaining === 5) {
     params.actionTimeRunsOut()
   }
-  if (remainingTimeSeconds === 0) {
+  if (times.remaining === 0) {
     params.actionFailed()
   }
-  if (remainingTimeSeconds < 0) {
+  if (times.remaining < 0) {
     params.currentCycleReset()
     return
   }
-  params.updateTimerWindow(elapsedTimeSeconds)
+  params.updateTimerWindow(times.elapsed)
 }
