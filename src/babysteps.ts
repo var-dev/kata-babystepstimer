@@ -71,7 +71,25 @@ class SetIntervalCallBack implements SetIntervalCallBackParams {
       true)
   }
   handler(){
-    setIntervalCallBack(this)
+    let times: Times = this.calculateTimes()
+    
+    if (this.lastRemainingTimeSeconds === times.remaining) { return; }
+    this.lastRemainingTimeSeconds = times.remaining;
+
+    if (times.elapsed > 1) {
+      this.setBackgroundColorNeutral()
+    }
+    if (times.remaining === 5) {
+      this.actionTimeRunsOut()
+    }
+    if (times.remaining === 0) {
+      this.actionFailed()
+    }
+    if (times.remaining < 0) {
+      this.currentCycleReset()
+      return
+    }
+    this.updateTimerWindow(times.elapsed)
   }
 }
 class ThreadTimer{
@@ -193,26 +211,4 @@ function playSound(url: string): void {
 
 function dateNowSeconds(){
   return Math.floor(Date.now() / 1000);
-}
-
-function setIntervalCallBack(params: SetIntervalCallBack): void {
-  let times: Times = params.calculateTimes()
-  
-  if (params.lastRemainingTimeSeconds === times.remaining) { return; }
-  params.lastRemainingTimeSeconds = times.remaining;
-
-  if (times.elapsed > 1) {
-    params.setBackgroundColorNeutral()
-  }
-  if (times.remaining === 5) {
-    params.actionTimeRunsOut()
-  }
-  if (times.remaining === 0) {
-    params.actionFailed()
-  }
-  if (times.remaining < 0) {
-    params.currentCycleReset()
-    return
-  }
-  params.updateTimerWindow(times.elapsed)
 }
