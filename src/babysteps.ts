@@ -45,6 +45,30 @@ class SetIntervalCallBack implements SetIntervalCallBackParams {
   renderTimerCallBackFn: RenderTimerCallBackFn;
   playSoundFn: PlaySoundFn;
   dateNowSecondsFn: () => number;
+  calculateTimes(){
+    const elapsed = this.dateNowSecondsFn() - this.currentCycleStartTimeSeconds
+    const remaining = this.cycleDurationSeconds - elapsed
+    return {elapsed, remaining}
+  }
+  currentCycleReset(){
+    this.currentCycleStartTimeSeconds = this.dateNowSecondsFn()
+  }
+  actionTimeRunsOut(){
+    this.playSoundFn("2166__suburban-grilla__bowl-struck.wav")
+  }
+  actionFailed(){
+    this.playSoundFn("32304__acclivity__shipsbell.wav")
+    this.bodyBackgroundColor = BackgroundColor.FAILED;
+  }
+  setBackgroundColorNeutral(){
+    this.bodyBackgroundColor = BackgroundColor.NEUTRAL;
+  }
+  updateTimerWindow(elapsedTime: number){
+    this.renderTimerCallBackFn(
+      printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTime * 1000)),
+      this.bodyBackgroundColor,
+      true)
+  }
 }
 class ThreadTimer{
   public  static readonly CYCLE_SECONDS = 15;
@@ -169,31 +193,25 @@ function dateNowSeconds(){
   return Math.floor(Date.now() / 1000);
 }
 
-function setIntervalCallBack(params: SetIntervalCallBackParams): void {
-  let elapsedTimeSeconds: number = params.dateNowSecondsFn() - params.currentCycleStartTimeSeconds;
-  let remainingTimeSeconds: number = params.cycleDurationSeconds - elapsedTimeSeconds;
+function setIntervalCallBack(params: SetIntervalCallBack): void {
+  let elapsedTimeSeconds: number = params.calculateTimes().elapsed
+  let remainingTimeSeconds: number = params.calculateTimes().remaining;
   
   if (params.lastRemainingTimeSeconds === remainingTimeSeconds) { return; }
   params.lastRemainingTimeSeconds = remainingTimeSeconds;
 
   if (elapsedTimeSeconds > 1) {
-    params.bodyBackgroundColor = BackgroundColor.NEUTRAL;
+    params.setBackgroundColorNeutral()
   }
   if (remainingTimeSeconds === 5) {
-    params.playSoundFn("2166__suburban-grilla__bowl-struck.wav");
+    params.actionTimeRunsOut()
   }
   if (remainingTimeSeconds === 0) {
-    params.playSoundFn("32304__acclivity__shipsbell.wav");
-    params.bodyBackgroundColor = BackgroundColor.FAILED;
+    params.actionFailed()
   }
   if (remainingTimeSeconds < 0) {
-    params.currentCycleStartTimeSeconds = params.dateNowSecondsFn()
+    params.currentCycleReset()
     return
   }
-
-  params.renderTimerCallBackFn(
-    printRemainingTimeCaption(getRemainingMinutesSeconds(elapsedTimeSeconds * 1000)),
-    params.bodyBackgroundColor,
-    true
-  )
+  params.updateTimerWindow(elapsedTimeSeconds)
 }
