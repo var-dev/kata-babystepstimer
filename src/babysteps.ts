@@ -70,6 +70,9 @@ class SetIntervalCallBack implements SetIntervalCallBackParams {
       this.bodyBackgroundColor,
       true)
   }
+  handler(){
+    setIntervalCallBack(this)
+  }
 }
 class ThreadTimer{
   public  static readonly CYCLE_SECONDS = 15;
@@ -97,9 +100,8 @@ class ThreadTimer{
   private setIntervalCallBackParams: SetIntervalCallBack;
   public run(){
     this.threadTimer = setInterval(
-      setIntervalCallBack, 
+      this.setIntervalCallBackParams.handler.bind(this.setIntervalCallBackParams), 
       150, 
-      this.setIntervalCallBackParams
     );
   }
   public stop(){
