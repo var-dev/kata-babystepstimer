@@ -23,15 +23,15 @@ if (typeof window !== "undefined") {
   window.command = command;
 }
 
-class SetIntervalCallBack {
-  public readonly cycleDurationSeconds: number = Timer.CYCLE_SECONDS;
+export class SetIntervalCallBack {
   public lastRemainingTimeSeconds: number = 0;
   public currentCycleStartTimeSeconds: number = 0;
   public bodyBackgroundColor: BackgroundColor = BackgroundColor.NEUTRAL;
   constructor(
     drawTimerWindow: DrawTimerWindow,
     createEffect: CreateAudioVisualEffect,
-    getDateNowSeconds: () => number
+    getDateNowSeconds: () => number,
+    public cycleDurationSeconds: number = Timer.CYCLE_SECONDS
   ){
     this.drawTimerWindow = drawTimerWindow.bind(this);
     this.createEffect = createEffect.bind(this);

@@ -1,7 +1,7 @@
 {
   "watch": ["test","src","./index.html"],
   "ext": "ts",
-  "ignore": ["**/*.spec.ts","**/*.test.ts"],
+  "ignore": ["**/*.spec.9ts","**/*.test.9ts"],
   "exec": "npm test"
 }
 
